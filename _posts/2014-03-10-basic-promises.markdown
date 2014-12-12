@@ -78,7 +78,7 @@ Asynchronous operations are the bread and butter of modern programming; by stand
 
 ### Chaining Promises
 
-A `Promise` represents the *future* value of an asynchronous task. To obtain the value of that future, we `then` off that Promise:
+A `Promise` represents the *future* value of an asynchronous task. To obtain the value of that future, we call `then` on that Promise:
 
 {% highlight objectivec %}
 UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:…];
