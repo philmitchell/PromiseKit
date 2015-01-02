@@ -212,12 +212,15 @@ The way to <em>call</em> a promise is to <code>then</code> it. However, because 
     <span class="pl-k">else</span> {
         promise = [<span class="pl-v">self</span> <span class="pl-s3">loginToRemoteServer:</span>userId];
     }
-    <span class="pl-k">return</span> promise.<span class="pl-s3">then</span>(^(<span class="pl-s3">NSDictionary</span> *userData){
-            self.<span class="pl-vo">user</span>.<span class="pl-vo">data</span> = userData;
-            <span class="pl-k">return</span> [<span class="pl-v">self</span> <span class="pl-s3">retrieveProfileImage:</span>userData.profileImageURL];
+    <span class="pl-k">return</span> promise.<span class="pl-s3">then</span>(^(User *user) {
+        self.<span class="pl-vo">user</span> = user;
+        <span class="pl-k">return</span> [<span class="pl-v">self</span> <span class="pl-s3">retrieveUserData:</span>user];
+    }).<span class="pl-s3">then</span>(^(<span class="pl-s3">NSDictionary</span> *userData){
+        self.<span class="pl-vo">user</span>.<span class="pl-vo">data</span> = userData;
+        <span class="pl-k">return</span> [<span class="pl-v">self</span> <span class="pl-s3">retrieveProfileImage:</span>userData.profileImageURL];
     }).<span class="pl-s3">then</span>(^(UIImage *userImage){
-            self.<span class="pl-vo">user</span>.<span class="pl-vo">profileImage</span> = userImage;
-            <span class="pl-k">return</span> self.<span class="pl-vo">user</span>; <span class="pl-c">// Return set up User as promise fulfillment</span>
+        self.<span class="pl-vo">user</span>.<span class="pl-vo">profileImage</span> = userImage;
+        <span class="pl-k">return</span> self.<span class="pl-vo">user</span>; <span class="pl-c">// Return set up User as promise fulfillment</span>
     }).catch(^(<span class="pl-s3">NSError</span> *){
          <span class="pl-c">// Log error but re-throw so caller can handle it</span>
          <span class="pl-c">// If we returned nil here, error would be considered handled</span>
