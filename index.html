@@ -1,11 +1,250 @@
----
-layout: default
----
+<!DOCTYPE html>
+<html>
 
-<div class="posts">
-  {% for post in paginator.posts %}
-  <div class="post">
-    {{ post.content }}
-  </div>
-  {% endfor %}
-</div>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Promisekit : Promises for iOS and OS X">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Promisekit</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/philmitchell/PromiseKit">View on GitHub</a>
+
+          <h1 id="project_title">Promisekit</h1>
+          <h2 id="project_tagline">Promises for iOS and OS X</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/philmitchell/PromiseKit/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/philmitchell/PromiseKit/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="promises-cookbook" class="anchor" href="#promises-cookbook" aria-hidden="true"><span class="octicon octicon-link"></span></a>Promises Cookbook</h1>
+
+<h2>
+<a id="recipe-0-understand-return-values" class="anchor" href="#recipe-0-understand-return-values" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 0: Understand return values</h2>
+
+<p>The key to understanding promises is to understand how <strong>return values</strong> move through the promise resolution process. Each of the recipes, below, illustrates a different aspect of this.</p>
+
+<p>A promise is essentially a function pointer. You can pass the function pointer around, but you don't get the value out until you <em>call</em> it.
+The way to <em>call</em> a promise is to <code>then</code> it. However, because the function is asynchronous, it can't pass its return value to the left. Instead, it passes it into its <code>then</code> block.</p>
+
+<h2>
+<a id="recipe-1-get-the-value-from-a-promise" class="anchor" href="#recipe-1-get-the-value-from-a-promise" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 1: Get the value from a promise</h2>
+
+<div class="highlight highlight-objc"><pre><span class="pl-c">// Method signature</span>
+
+<span class="pl-c">// Promise resolves to User instance</span>
+- (PMKPromise *)loginToRemoteServer:(<span class="pl-s3">NSString</span> *)userId; </pre></div>
+
+<div class="highlight highlight-objc"><pre><span class="pl-c">// Getting the value out.</span>
+[<span class="pl-v">self</span> <span class="pl-s3">loginToRemoteServer:</span>userId].then(^(User *user) {
+    self.<span class="pl-vo">user</span> = user;
+});</pre></div>
+
+<h3>
+<a id="notes" class="anchor" href="#notes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Notes</h3>
+
+<ul>
+<li>We always get the value(s) out of promises via side effects.</li>
+<li>It's good practice to document the return type of promise-returning methods, since the method signature no longer does so.</li>
+</ul>
+
+<h2>
+<a id="recipe-2-handle-errors" class="anchor" href="#recipe-2-handle-errors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 2: Handle errors</h2>
+
+<p>Every promise actually has the potential to return two different types: its "promised" type and <code>NSError</code>. If the promise fails, the <code>then</code> block is skipped. </p>
+
+<div class="highlight highlight-objc"><pre>[<span class="pl-v">self</span> <span class="pl-s3">loginToRemoteServer:</span>userId].then(^(User *user) {
+    self.<span class="pl-vo">user</span> = user;
+}).catch(^(<span class="pl-s3">NSError</span> *error){
+    <span class="pl-c">// Something went wrong; deal with it here</span>
+    ...
+    <span class="pl-k">return</span> <span class="pl-c1">nil</span>;
+});</pre></div>
+
+<h3>
+<a id="notes-1" class="anchor" href="#notes-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Notes</h3>
+
+<ul>
+<li>Return anything other than <code>NSError</code> to stop the error from bubbling up.</li>
+</ul>
+
+<h2>
+<a id="recipe-3-create-a-sequence-of-promises" class="anchor" href="#recipe-3-create-a-sequence-of-promises" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 3: Create a sequence of promises</h2>
+
+<p>A single promise is basically a fancy callback with a <code>catch</code> block. The power of promises comes from the fact that they are chainable (aka composable).</p>
+
+<p>First, look at the unchained (ie., nested) version. It is very similar to nested callbacks and just as with callbacks, if we added error handling to each promise, it would start to get messy.</p>
+
+<div class="highlight highlight-objc"><pre><span class="pl-c">// Method signatures</span>
+
+<span class="pl-c">// Promise resolves to User instance</span>
+- (PMKPromise *)loginToRemoteServer:(<span class="pl-s3">NSString</span> *)userId; 
+
+<span class="pl-c">// Promise resolves to NSDictionary of user data</span>
+- (PMKPromise *)retrieveUserData:(User *)user; 
+
+<span class="pl-c">// Promise resolves to UIImage</span>
+- (PMKPromise *)retrieveProfileImage:(<span class="pl-s3">NSURL</span> *)imageURL; </pre></div>
+
+<div class="highlight highlight-objc"><pre>[<span class="pl-v">self</span> <span class="pl-s3">loginToRemoteServer:</span>userId].then(^(User *user) {
+    self.<span class="pl-vo">user</span> = user;
+    [<span class="pl-v">self</span> <span class="pl-s3">retrieveUserData:</span>user].<span class="pl-s3">then</span>(^(<span class="pl-s3">NSDictionary</span> *userData){
+         self.<span class="pl-vo">user</span>.<span class="pl-vo">data</span> = userData;
+         [<span class="pl-v">self</span> <span class="pl-s3">retrieveProfileImage:</span>userData.profileImageURL].<span class="pl-s3">then</span>(^(UIIMage *userImage){
+               self.<span class="pl-vo">user</span>.<span class="pl-vo">profileImage</span> = userImage;
+         });
+    });
+})</pre></div>
+
+<p>Here is the chained version. Note the single catch block that simplifies error handling.</p>
+
+<div class="highlight highlight-objc"><pre>[<span class="pl-v">self</span> <span class="pl-s3">loginToRemoteServer:</span>userId].then(^(User *user) {
+    self.<span class="pl-vo">user</span> = user;
+    <span class="pl-k">return</span> [<span class="pl-v">self</span> <span class="pl-s3">retrieveUserData:</span>user];
+}).then(^(<span class="pl-s3">NSDictionary</span> *userData){
+    self.<span class="pl-vo">user</span>.<span class="pl-vo">data</span> = userData;
+    <span class="pl-k">return</span> [<span class="pl-v">self</span> <span class="pl-s3">retrieveProfileImage:</span>userData.profileImageURL];
+}).then(^(UIImage *userImage){
+    self.<span class="pl-vo">user</span>.<span class="pl-vo">profileImage</span> = userImage;
+}).catch(^(<span class="pl-s3">NSError</span> *){
+    <span class="pl-c">// Catch any errors here</span>
+    ...
+});</pre></div>
+
+<h3>
+<a id="notes-rules-for-chained-return-values" class="anchor" href="#notes-rules-for-chained-return-values" aria-hidden="true"><span class="octicon octicon-link"></span></a>Notes: Rules for chained return values</h3>
+
+<p>Notice that in the chained version, each of the <code>then</code> blocks has a <strong>return value</strong>. Here's how it works:</p>
+
+<ul>
+<li>A <code>then</code> block's non-error return value gets passed to the next <code>then</code> block;</li>
+<li>If a <code>then</code> block returns <code>NSError</code>, that value gets passed to the next <code>catch</code> block (skipping intervening <code>then's</code>);</li>
+<li>If a <code>then</code> block doesn't return a value, the next <code>then</code> is called as soon as the block completes.</li>
+</ul>
+
+<p><em>And here's the most important part:</em></p>
+
+<ul>
+<li>If a <code>then</code> block returns a promise, the next <code>then</code> receives its resolved value. This is the magic that lets us write asynchronous code almost as if it's synchronous.</li>
+</ul>
+
+<h2>
+<a id="recipe-4-branching" class="anchor" href="#recipe-4-branching" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 4: Branching</h2>
+
+<div class="highlight highlight-objc"><pre>myURLPromise.then(^<span class="pl-st">id</span>(<span class="pl-s3">NSURL</span> *url){ 
+     <span class="pl-k">if</span> (url) {
+         <span class="pl-k">return</span> url; <span class="pl-c">// Got my url, I'm done, return the value</span>
+     }
+     <span class="pl-k">else</span> {
+         <span class="pl-k">return</span> myOtherURLPromise; <span class="pl-c">// Not done, do some more work</span>
+     }
+}).then(^(<span class="pl-s3">NSURL</span> *url){
+    <span class="pl-c">// Do something with URL ...</span>
+});</pre></div>
+
+<h3>
+<a id="notes-2" class="anchor" href="#notes-2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Notes</h3>
+
+<p>Until now, the <a href="http://fuckingblocksyntax.com/">method signatures</a> of our <code>then</code> blocks have all omitted their return types. These return types are being filled in via introspection. But whenever a block returns more than one type (as may happen when branching), the return type must be explicitly typed to <code>id</code>.</p>
+
+<p>In this example, the first return value is <code>NSURL *</code> but the second is <code>PMKPromise *</code>. The compiler won't accept that unless we specify the return type of the block as <code>id</code>.</p>
+
+<h2>
+<a id="recipe-5-pass-primitives-to-then-block" class="anchor" href="#recipe-5-pass-primitives-to-then-block" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 5: Pass primitives to <code>then</code> block.</h2>
+
+<p>You can return primitives from a <code>then</code> block, but the arguments passed into the next block are always boxed (ie., wrapped as objects).</p>
+
+<div class="highlight highlight-objc"><pre>myPromise.then(^{
+        ...
+        <span class="pl-k">return</span> <span class="pl-c1">3</span>;
+}).then(^(<span class="pl-s3">NSNumber</span> *result){
+    NSInteger intResult = [result <span class="pl-s3">integerValue</span>];
+    ...
+});</pre></div>
+
+<h2>
+<a id="recipe-6-wrap-an-asynchronous-method-inside-a-promise" class="anchor" href="#recipe-6-wrap-an-asynchronous-method-inside-a-promise" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 6: Wrap an asynchronous method inside a promise</h2>
+
+<p>Any method that takes a callback (block) can be turned into a promise by wrapping it. Here, we're wrapping Firebase's oauth method.</p>
+
+<div class="highlight highlight-objc"><pre><span class="pl-c">// Promise resolves to FAuthData.</span>
+- (PMKPromise *)firebaseAuthWithOAuthProvider:provider <span class="pl-en">accessToken</span>(<span class="pl-s3">NSString</span> *)token
+{
+    PMKPromise *promise = [PMKPromise <span class="pl-s3">new:</span>^(PMKPromiseFulfiller fulfill, PMKPromiseRejecter reject) {
+        [firebase <span class="pl-s3">authWithOAuthProvider:</span>provider <span class="pl-s3">token:</span>token <span class="pl-s3">withCompletionBlock:</span>^(<span class="pl-s3">NSError</span> *error, FAuthData *authData) {
+            <span class="pl-k">if</span> (error) {
+                <span class="pl-s3">reject</span>(error);                            
+            }
+            <span class="pl-k">else</span> {
+                <span class="pl-s3">fulfill</span>(authData);
+            }
+        }];
+    }];
+    <span class="pl-k">return</span> promise;
+}
+</pre></div>
+
+<h2>
+<a id="recipe-7-use-promises-as-building-blocks" class="anchor" href="#recipe-7-use-promises-as-building-blocks" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 7: Use promises as building blocks</h2>
+
+<div class="highlight highlight-objc"><pre><span class="pl-c">// Promise returns User instance</span>
+- (PMKPromise *)setupUserWithId:(<span class="pl-s3">NSString</span> *)userId
+{
+    PMKPromise *promise;
+    <span class="pl-k">if</span> (self.<span class="pl-vo">user</span>) {
+        promise = [PMKPromise <span class="pl-s3">promiseWithValue:</span><span class="pl-v">self</span>.user]; <span class="pl-c">// Resolves immediately</span>
+    }
+    <span class="pl-k">else</span> {
+        promise = [<span class="pl-v">self</span> <span class="pl-s3">loginToRemoteServer:</span>userId];
+    }
+    <span class="pl-k">return</span> promise.<span class="pl-s3">then</span>(^(<span class="pl-s3">NSDictionary</span> *userData){
+            self.<span class="pl-vo">user</span>.<span class="pl-vo">data</span> = userData;
+            <span class="pl-k">return</span> [<span class="pl-v">self</span> <span class="pl-s3">retrieveProfileImage:</span>userData.profileImageURL];
+    }).<span class="pl-s3">then</span>(^(UIImage *userImage){
+            self.<span class="pl-vo">user</span>.<span class="pl-vo">profileImage</span> = userImage;
+            <span class="pl-k">return</span> self.<span class="pl-vo">user</span>; <span class="pl-c">// Return set up User as promise fulfillment</span>
+    }).catch(^(<span class="pl-s3">NSError</span> *){
+         <span class="pl-c">// Log error but re-throw so caller can handle it</span>
+         <span class="pl-c">// If we returned nil here, error would be considered handled</span>
+         <span class="pl-s3">NSLog</span>(<span class="pl-s1"><span class="pl-pds">@"</span>Error in setupUserWithId: <span class="pl-c1">%@</span><span class="pl-pds">"</span></span>, error);
+         <span class="pl-k">return</span> error;
+    });
+}</pre></div>
+
+<p>... elsewhere ...</p>
+
+<div class="highlight highlight-objc"><pre>[<span class="pl-v">self</span> <span class="pl-s3">setupUserWithId:</span>userId].then(^(User *user){
+    <span class="pl-c">// User is set up; do something with it</span>
+}).catch(^(<span class="pl-s3">NSError</span> *error){
+    <span class="pl-c">// Let app user know that there's a problem</span>
+});</pre></div>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Promisekit maintained by <a href="https://github.com/philmitchell">philmitchell</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
