@@ -165,7 +165,29 @@ The way to <em>call</em> a promise is to <code>then</code> it. However, because 
 <p>In this example, the first return value is <code>NSURL *</code> but the second is <code>PMKPromise *</code>. The compiler won't accept that unless we specify the return type of the block as <code>id</code>.</p>
 
 <h2>
-<a id="recipe-5-pass-primitives-to-then-block" class="anchor" href="#recipe-5-pass-primitives-to-then-block" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 5: Pass primitives to <code>then</code> block.</h2>
+<a id="recipe-5-looping" class="anchor" href="#recipe-5-looping" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 5: Looping</h2>
+
+<p>You want to get the results from a set of promises whose number is not known in advance. Use the <code>when</code> class method to handle multiple promises at the same time.</p>
+
+<div class="highlight highlight-objc"><pre><span class="pl-c">// Promise resolves to array of UIImages</span>
+- (PMKPromise *)getImagesForURLs:(<span class="pl-s3">NSArray</span> *)urls
+{
+    <span class="pl-s3">NSMutableArray</span> *promises = [<span class="pl-s3">NSMutableArray</span> <span class="pl-s3">array</span>];
+    <span class="pl-k">for</span> (<span class="pl-s3">NSURL</span> *url in urls) {
+        <span class="pl-c">// getImageForURL returns promise that resolves to UIImage</span>
+        [promises <span class="pl-s3">addObject:</span>[<span class="pl-v">self</span> <span class="pl-s3">getImageForURL:</span>url]]; 
+    }
+    <span class="pl-k">return</span> [PMKPromise <span class="pl-s3">when:</span>promises].<span class="pl-s3">then</span>(^(<span class="pl-s3">NSArray</span> *results){ 
+            <span class="pl-s3">NSMutableArray</span> *images = [<span class="pl-s3">NSMutableArray</span> <span class="pl-s3">array</span>];
+            <span class="pl-k">for</span> (UIImage *image in results) {
+                [images <span class="pl-s3">addObject:</span>image];
+            }
+            <span class="pl-k">return</span> images;
+    });
+}</pre></div>
+
+<h2>
+<a id="recipe-6-pass-primitives-to-then-block" class="anchor" href="#recipe-6-pass-primitives-to-then-block" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 6: Pass primitives to <code>then</code> block.</h2>
 
 <p>You can return primitives from a <code>then</code> block, but the arguments passed into the next block are always boxed (ie., wrapped as objects).</p>
 
@@ -178,7 +200,7 @@ The way to <em>call</em> a promise is to <code>then</code> it. However, because 
 });</pre></div>
 
 <h2>
-<a id="recipe-6-wrap-an-asynchronous-method-inside-a-promise" class="anchor" href="#recipe-6-wrap-an-asynchronous-method-inside-a-promise" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 6: Wrap an asynchronous method inside a promise</h2>
+<a id="recipe-7-wrap-an-asynchronous-method-inside-a-promise" class="anchor" href="#recipe-7-wrap-an-asynchronous-method-inside-a-promise" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 7: Wrap an asynchronous method inside a promise</h2>
 
 <p>Any method that takes a callback (block) can be turned into a promise by wrapping it. Here, we're wrapping Firebase's oauth method.</p>
 
@@ -200,7 +222,7 @@ The way to <em>call</em> a promise is to <code>then</code> it. However, because 
 </pre></div>
 
 <h2>
-<a id="recipe-7-use-promises-as-building-blocks" class="anchor" href="#recipe-7-use-promises-as-building-blocks" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 7: Use promises as building blocks</h2>
+<a id="recipe-8-use-promises-as-building-blocks" class="anchor" href="#recipe-8-use-promises-as-building-blocks" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recipe 8: Use promises as building blocks</h2>
 
 <div class="highlight highlight-objc"><pre><span class="pl-c">// Promise returns User instance</span>
 - (PMKPromise *)setupUserWithId:(<span class="pl-s3">NSString</span> *)userId
